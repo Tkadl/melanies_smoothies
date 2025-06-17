@@ -36,9 +36,6 @@ try:
     # Create a pandas DataFrame from the results
     pd_df = pd.DataFrame(result, columns=['FRUIT_NAME', 'SEARCH_ON'])
     
-    # For debugging - view the dataframe
-    st.dataframe(pd_df)
-    st.stop()  # This will stop execution here for debugging
     
     # 🧺 Let user select fruits
     ingredients_list = st.multiselect(
