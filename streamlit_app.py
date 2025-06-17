@@ -12,6 +12,14 @@ st.write('The name on your Smoothie will be:', name_on_order)
 st.title(':cup_with_straw: Customize Your Smoothie!:cup_with_straw:')
 st.write("Choose the fruits you want in your custom Smoothie!")
 
+# Function to find fruit in the complete fruit data
+def find_fruit_in_all_data(all_data, search_term):
+    search_term_lower = search_term.lower()
+    for fruit in all_data:
+        if 'name' in fruit and fruit['name'].lower() == search_term_lower:
+            return fruit
+    return None
+
 # 🔌 Connect to Snowflake directly
 try:
     # Get connection parameters from secrets
@@ -36,6 +44,17 @@ try:
     # Create a pandas DataFrame from the results
     pd_df = pd.DataFrame(result, columns=['FRUIT_NAME', 'SEARCH_ON'])
     
+    # Fetch all fruits data from the API once
+    try:
+        all_fruits_response = requests.get("https://my.smoothiefroot.com/api/fruit/all")
+        if all_fruits_response.status_code == 200:
+            all_fruits_data = all_fruits_response.json()
+        else:
+            all_fruits_data = []
+            st.warning("Could not fetch the complete fruits database. Some nutrition information may not be available.")
+    except Exception as e:
+        all_fruits_data = []
+        st.warning(f"Error fetching complete fruits database: {e}")
     
     # 🧺 Let user select fruits
     ingredients_list = st.multiselect(
@@ -59,16 +78,32 @@ try:
             st.subheader(f"{fruit_chosen} Nutrition Information")
             
             try:
-                # Use search_on instead of fruit_chosen for API call
-                # Convert to lowercase and remove spaces for API call
+                # First try using the direct API endpoint with the search_on value
                 formatted_search = search_on.lower().replace(' ', '')
-                fruityvice_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{formatted_search}")
+                direct_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{formatted_search}")
                 
-                # Check if the request was successful
-                if fruityvice_response.status_code == 200:
-                    sf_df = st.dataframe(data=fruityvice_response.json(), use_container_width=True)
+                # If direct API call fails, search in the all_fruits_data
+                if direct_response.status_code == 200:
+                    st.dataframe(data=direct_response.json(), use_container_width=True)
                 else:
-                    st.warning(f"Could not retrieve nutrition data for {fruit_chosen}. Status code: {fruityvice_response.status_code}")
+                    # Search in the all_fruits_data
+                    if all_fruits_data:
+                        # Try with the search_on value first
+                        fruit_data = find_fruit_in_all_data(all_fruits_data, search_on)
+                        
+                        # If not found with search_on, try with original fruit_chosen
+                        if not fruit_data and search_on != fruit_chosen:
+                            fruit_data = find_fruit_in_all_data(all_fruits_data, fruit_chosen)
+                        
+                        # If found, display the data
+                        if fruit_data:
+                            st.success(f"Found nutrition data for {fruit_chosen} in the comprehensive database!")
+                            st.dataframe(data=[fruit_data], use_container_width=True)
+                        else:
+                            st.error(f"Could not find nutrition data for {fruit_chosen} in any database.")
+                    else:
+                        st.error(f"Could not retrieve nutrition data for {fruit_chosen}.")
+                
             except Exception as e:
                 st.error(f"Error retrieving nutrition data for {fruit_chosen}: {e}")
     
