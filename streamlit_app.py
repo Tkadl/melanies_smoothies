@@ -38,14 +38,10 @@ try:
     # Convert Snowpark DataFrame to Pandas DataFrame
     pd_df = my_dataframe.to_pandas()
     
-    # Display the dataframe (for debugging, can be commented out later)
-    st.dataframe(pd_df)
-    st.stop()  # This will stop execution here for debugging
-    
     # 🧺 Let user select fruits
     ingredients_list = st.multiselect(
         'Choose up to 5 ingredients:',
-        my_dataframe,  # Use my_dataframe for selection
+        pd_df['FRUIT_NAME'].tolist(),  # Use the FRUIT_NAME column for selection
         max_selections=5
     )
     
@@ -65,7 +61,9 @@ try:
             
             try:
                 # Use search_on instead of fruit_chosen for API call
-                fruityvice_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{search_on}")
+                # Convert to lowercase and remove spaces for API call
+                formatted_search = search_on.lower().replace(' ', '')
+                fruityvice_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{formatted_search}")
                 
                 # Check if the request was successful
                 if fruityvice_response.status_code == 200:
