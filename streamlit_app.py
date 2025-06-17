@@ -67,3 +67,7 @@ finally:
         cursor.close()
     if 'conn' in locals():
         conn.close()
+
+import requests
+smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/watermelon")
+st.text(smoothiefroot_response)
