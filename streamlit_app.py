@@ -1,10 +1,8 @@
 # Import python packages
 import streamlit as st
 import snowflake.connector
-from snowflake.connector.pandas_tools import pd_writer
 import requests
 import pandas as pd
-from snowflake.snowpark.functions import col
 
 # 🧾 Add a name box for the customer
 name_on_order = st.text_input('Name on Smoothie:')
@@ -29,14 +27,18 @@ try:
     # Create a cursor object
     cursor = conn.cursor()
     
-    # Get Snowpark session
-    session = conn.cursor().connection._session
-    
     # Execute a query to fetch fruit options with SEARCH_ON column
-    my_dataframe = session.table("smoothies.public.fruit_options").select(col("FRUIT_NAME"), col("SEARCH_ON"))
+    cursor.execute("SELECT FRUIT_NAME, SEARCH_ON FROM smoothies.public.fruit_options")
     
-    # Convert Snowpark DataFrame to Pandas DataFrame
-    pd_df = my_dataframe.to_pandas()
+    # Fetch all the results
+    result = cursor.fetchall()
+    
+    # Create a pandas DataFrame from the results
+    pd_df = pd.DataFrame(result, columns=['FRUIT_NAME', 'SEARCH_ON'])
+    
+    # For debugging - view the dataframe
+    st.dataframe(pd_df)
+    st.stop()  # This will stop execution here for debugging
     
     # 🧺 Let user select fruits
     ingredients_list = st.multiselect(
