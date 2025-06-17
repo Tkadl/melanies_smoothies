@@ -12,8 +12,8 @@ st.write("Choose the fruits you want in your custom Smoothie!")
 
 # 🔌 Connect to Snowflake and pull fruit options
 cnx = st.connection("snowflake")
-session = cnx.session
-my_dataframe = session.table("smoothies.public.fruit_options").select(col("FRUIT_NAME"))
+# Using query method instead of accessing session.table
+my_dataframe = cnx.query("SELECT FRUIT_NAME FROM smoothies.public.fruit_options")
 
 # 🧺 Let user select fruits
 ingredients_list = st.multiselect(
@@ -29,17 +29,14 @@ if ingredients_list:
         ingredients_string += fruit_chosen + ' '
 
     # 🧠 Build insert statement with both ingredients and name
-    my_insert_stmt = """
-        insert into smoothies.public.orders(ingredients, name_on_order)
-        values ('""" + ingredients_string + """', '""" + name_on_order + """')
+    # Use the query method for inserts too
+    insert_query = f"""
+        INSERT INTO smoothies.public.orders(ingredients, name_on_order)
+        VALUES ('{ingredients_string}', '{name_on_order}')
     """
-
-    # 🛠️ Optional: Debug before executing
-    # st.write(my_insert_stmt)
-    # st.stop()
 
     # 🖱️ Submit button logic
     time_to_insert = st.button('Submit Order')
     if time_to_insert:
-        session.sql(my_insert_stmt).collect()
+        cnx.query(insert_query)
         st.success(f'Your Smoothie is ordered, {name_on_order}!', icon="✅")
