@@ -2,6 +2,7 @@
 import streamlit as st
 import snowflake.connector
 from snowflake.connector.pandas_tools import pd_writer
+import requests
 
 # 🧾 Add a name box for the customer
 name_on_order = st.text_input('Name on Smoothie:')
@@ -45,8 +46,11 @@ try:
     # 🍹 Process selected ingredients
     if ingredients_list:
         ingredients_string = ''
+        
         for fruit_chosen in ingredients_list:
             ingredients_string += fruit_chosen + ' '
+            smoothiefroot_response = requests.get(f"https://my.smoothiefroot.com/api/fruit/{fruit_chosen.lower()}")
+            sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
     
         # 🖱️ Submit button logic
         time_to_insert = st.button('Submit Order')
@@ -67,8 +71,3 @@ finally:
         cursor.close()
     if 'conn' in locals():
         conn.close()
-
-import requests
-smoothiefroot_response = requests.get("https://my.smoothiefroot.com/api/fruit/watermelon")
-# st.text(smoothiefroot_response.json())
-sf_df = st.dataframe(data=smoothiefroot_response.json(), use_container_width=True)
